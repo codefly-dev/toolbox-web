@@ -27,7 +27,7 @@
           pname = "toolbox-web";
           version = "0.0.1";
           src = pkgs.lib.cleanSource ./.;
-          vendorHash = pkgs.lib.fakeHash;
+          vendorHash = "sha256-j7PBV1jH0Qe8meQF5jrSyVWr05MBSx8SORJV/++2Xmo=";
           # Build only the binary entrypoint, not the test packages —
           # `subPackages` keeps the nix build narrow + fast.
           subPackages = [ "cmd/toolbox-web" ];
