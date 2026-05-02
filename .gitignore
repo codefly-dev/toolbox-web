@@ -1,0 +1,7 @@
+go.work
+go.work.sum
+/toolbox-web
+/cmd/toolbox-web/toolbox-web
+.DS_Store
+.idea/
+.vscode/

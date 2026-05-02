@@ -1,0 +1,34 @@
+name: web
+version: 0.0.1
+description: |
+  HTTP fetch behind a domain allowlist. Canonical replacement for
+  curl/wget — the bash toolbox routes both binaries here.
+
+  Network policy is enforced at two layers:
+    1. The toolbox's domain allowlist (set via env): refuses any URL
+       whose host isn't on the list, including across redirects.
+    2. The host's OS sandbox: can additionally restrict outbound
+       network at the kernel level. The toolbox doesn't assume the
+       OS layer is in place; the in-process check is authoritative
+       on its own.
+
+agent:
+  kind: codefly:toolbox
+  name: web
+  publisher: codefly.dev
+  version: 0.0.1
+
+sandbox:
+  read_paths: []
+  write_paths: []
+  # Network is allowed but constrained: only outbound TCP to hosts
+  # on the toolbox's allowlist (passed via CODEFLY_TOOLBOX_ALLOWED_DOMAINS).
+  network: allow
+  unix_sockets: []
+
+# Canonical owner of curl/wget — bash refuses those and routes here.
+canonical_for:
+  - curl
+  - wget
+
+spec: {}
