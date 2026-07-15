@@ -1,5 +1,5 @@
 name: web
-version: 0.0.1
+version: 0.0.10
 description: |
   HTTP fetch behind a domain allowlist. Canonical replacement for
   curl/wget — the bash toolbox routes both binaries here.
@@ -16,7 +16,7 @@ agent:
   kind: codefly:toolbox
   name: web
   publisher: codefly.dev
-  version: 0.0.1
+  version: 0.0.10
 
 sandbox:
   read_paths: []

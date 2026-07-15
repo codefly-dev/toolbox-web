@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/types/known/structpb"
-
 	toolboxv0 "github.com/codefly-dev/core/generated/go/codefly/services/toolbox/v0"
 	"github.com/codefly-dev/core/toolbox/registry"
 	"github.com/codefly-dev/core/toolbox/respond"
@@ -85,10 +83,9 @@ func New(version string) *Server {
 			return nil
 		},
 	}
-	s.Base = registry.NewBase(s)
+	s.Base = registry.NewBase(s.descriptor(), s.Tools()...)
 	return s
 }
-
 
 // WithAllowedDomains adds hosts to the allowlist. Match semantics:
 //
@@ -106,25 +103,20 @@ func (s *Server) WithAllowedDomains(domains ...string) *Server {
 	for _, d := range domains {
 		s.allowedDomains[strings.ToLower(d)] = struct{}{}
 	}
+	s.Base.SetDescriptor(s.descriptor())
 	return s
 }
 
-// --- Identity ----------------------------------------------------
-
-func (s *Server) Identity(_ context.Context, _ *toolboxv0.IdentityRequest) (*toolboxv0.IdentityResponse, error) {
-	allowed := make([]string, 0, len(s.allowedDomains))
-	for d := range s.allowedDomains {
-		allowed = append(allowed, d)
-	}
-	return &toolboxv0.IdentityResponse{
-		Name:        "web",
-		Version:     s.version,
-		Description: "HTTP fetch behind a domain allowlist; canonical replacement for curl/wget.",
+func (s *Server) descriptor() registry.Descriptor {
+	return registry.Descriptor{
+		Name:         "web",
+		Version:      s.version,
+		Description:  "HTTP fetch behind a domain allowlist; canonical replacement for curl/wget.",
 		CanonicalFor: []string{"curl", "wget"},
 		SandboxSummary: fmt.Sprintf(
 			"network: allowlist (%d domain(s)); reads: deny; writes: deny",
-			len(allowed)),
-	}, nil
+			len(s.allowedDomains)),
+	}
 }
 
 // --- Tools -------------------------------------------------------
@@ -173,7 +165,7 @@ func (s *Server) Tools() []*registry.ToolDefinition {
 				},
 				"required": []any{"url"},
 			}),
-			Tags:        []string{"web", "network", "read-only"},
+			Tags:        []string{"network", "read-only"},
 			Idempotency: "side_effecting",
 			ErrorModes: "Returns error envelope with one of: 'host X not on allowlist' (denied by " +
 				"toolbox), 'redirect to X blocked' (target redirected off-allowlist), 'invalid URL', or " +
@@ -182,29 +174,18 @@ func (s *Server) Tools() []*registry.ToolDefinition {
 			Examples: []*toolboxv0.ToolExample{
 				{
 					Description:     "Simple GET against an allowlisted host.",
-					Arguments:       mustWebStruct(map[string]any{"url": "https://api.example.com/v1/status"}),
+					Arguments:       respond.MustStruct(map[string]any{"url": "https://api.example.com/v1/status"}),
 					ExpectedOutcome: "{ status_code: 200, status_text: 'OK', headers: {...}, body: '...', truncated: false }",
 				},
 				{
 					Description:     "POST with JSON body.",
-					Arguments:       mustWebStruct(map[string]any{"url": "https://api.example.com/v1/items", "method": "POST", "headers": map[string]any{"Content-Type": "application/json"}, "body": `{"name": "x"}`}),
+					Arguments:       respond.MustStruct(map[string]any{"url": "https://api.example.com/v1/items", "method": "POST", "headers": map[string]any{"Content-Type": "application/json"}, "body": `{"name": "x"}`}),
 					ExpectedOutcome: "Returns the response from the API. Body cap applies; truncation surfaces in the flag.",
 				},
 			},
 			Handler: s.fetch,
 		},
 	}
-}
-
-// mustWebStruct mirrors git's mustStruct — a tiny helper for the
-// inline Tools() example values. Panics only on programmer-typo
-// inputs (literal map[string]any always succeeds).
-func mustWebStruct(m map[string]any) *structpb.Struct {
-	s, err := structpb.NewStruct(m)
-	if err != nil {
-		panic(fmt.Sprintf("web toolbox: cannot encode example args: %v", err))
-	}
-	return s
 }
 
 // --- Tool implementation -----------------------------------------
@@ -302,4 +283,3 @@ func (s *Server) fetch(ctx context.Context, req *toolboxv0.CallToolRequest) *too
 		"truncated":   truncated,
 	})
 }
-
