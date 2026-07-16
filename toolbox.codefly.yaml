@@ -1,5 +1,5 @@
 name: web
-version: 0.0.10
+version: 0.0.11
 description: |
   HTTP fetch behind a domain allowlist. Canonical replacement for
   curl/wget — the bash toolbox routes both binaries here.
@@ -16,19 +16,26 @@ agent:
   kind: codefly:toolbox
   name: web
   publisher: codefly.dev
-  version: 0.0.10
+  version: 0.0.11
 
 sandbox:
   read_paths: []
   write_paths: []
   # Network is allowed but constrained: only outbound TCP to hosts
   # on the toolbox's allowlist (passed via CODEFLY_TOOLBOX_ALLOWED_DOMAINS).
-  network: allow
+  network: open
   unix_sockets: []
 
 # Canonical owner of curl/wget — bash refuses those and routes here.
 canonical_for:
   - curl
   - wget
+
+permissions:
+  required:
+    - action: web.fetch
+      reason: Fetch an HTTP resource from the operator-configured domain allowlist.
+  risk_levels:
+    web.fetch: high
 
 spec: {}
