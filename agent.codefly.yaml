@@ -2,3 +2,8 @@ publisher: codefly.dev
 kind: codefly:toolbox
 name: web
 version: 0.0.14
+release:
+  owner: cli
+source:
+  directory: cmd/toolbox-web
+  agent: codefly.dev/go:0.0.54
